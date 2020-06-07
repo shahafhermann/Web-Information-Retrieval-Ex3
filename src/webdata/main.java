@@ -5,9 +5,9 @@ import java.util.*;
 
 public class main {
     public static void main(String[] args) {
-        String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex2/indexFiles";
-        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Movies_&_TV.txt";
-//        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex2/1000.txt";
+        String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/indexFiles";
+//        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Movies_&_TV.txt";
+        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/5.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Musical_Instruments.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Electronics.txt";
 
@@ -16,14 +16,27 @@ public class main {
         siw.write(file, dir);
         IndexReader ir = new IndexReader(dir);
 
-        test1(ir);
+//        test1(ir);
+        test2(ir);
 
-//        siw.removeIndex(dir);
+        siw.removeIndex(dir);
+
     }
 
     private static void takeTime(String msg) {
         String timeStamp =  new SimpleDateFormat("HH.mm.ss.SS").format(new java.util.Date());
         System.err.println(msg + " at " + timeStamp);
+    }
+
+    private static void test2(IndexReader ir) {
+        String[] queryTerms = {"best", "ever", "best", "query", "ever", "ever", "shahaf", "shahaf", "zohar", "zohar"};
+        Vector<String> reviewsWithToken = new Vector<>(Arrays.asList(queryTerms));
+        ReviewSearch rs = new ReviewSearch(ir);
+        Enumeration<Integer> res;
+        res = rs.vectorSpaceSearch(reviewsWithToken.elements(), 5);
+        while (res.hasMoreElements()) {
+            System.out.println(res.nextElement());
+        }
     }
 
     private static void test1(IndexReader ir) {

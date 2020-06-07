@@ -3,6 +3,7 @@ package webdata.utils;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 
 /**
@@ -89,5 +90,25 @@ public final class Utils {
         for (int i = 0; i < list.size(); ++i) {
             arr[i] = list.get(i);
         }
+    }
+
+    public static double[] integerCollectionToDoubleArray(Collection<Integer> values) {
+        double[] result = new double[values.size()];
+        int i = 0;
+        for (Integer val: values) {
+            result[i] = (double) val;
+            ++i;
+        }
+        return result;
+    }
+
+    public static double[] doubleCollectionToDoubleArray(Collection<Double> values) {
+        double[] result = new double[values.size()];
+        int i = 0;
+        for (double val: values) {
+            result[i] = val;
+            ++i;
+        }
+        return result;
     }
 }
