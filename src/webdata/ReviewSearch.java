@@ -17,6 +17,8 @@ public class ReviewSearch {
         ir = iReader;
     }
 
+    /* -------------------------------- Vector Space Search ------------------------------------ */
+
     private double[] calcLtf(double[] termFrequencies) {
         Arrays.parallelSetAll(termFrequencies,
                 i -> ((termFrequencies[i] == 0) ? 0 : (1 + Math.log10(termFrequencies[i]))));
@@ -31,9 +33,9 @@ public class ReviewSearch {
     }
 
     private TreeMap<String, Integer> histogramQuery(Enumeration<String> query) {
+        List<String> queryList = Collections.list(query);
         TreeMap<String, Integer> hist = new TreeMap<>();
-        while (query.hasMoreElements()) {
-            String term = query.nextElement();
+        for (String term: queryList) {
             Integer freq = (hist.keySet().contains(term)) ? hist.get(term) + 1 : 1;
             hist.put(term, freq);
         }
@@ -127,15 +129,54 @@ public class ReviewSearch {
             reviewWithScores[i] = rws;
             ++i;
         }
-        Arrays.sort(reviewWithScores, (o1, o2) -> -o1.compareTo(o2));
-        int numOfBestResults = Math.min(k, reviewWithScores.length);
-        Integer[] bestResults = new Integer[numOfBestResults];
-        for (i = 0; i < bestResults.length; ++i) {
-            bestResults[i] = reviewWithScores[i].getReviewNumber();
-        }
+        return getBestReviews(k, reviewWithScores);
+    }
 
-        Vector<Integer> bestReviews = new Vector<>(Arrays.asList(bestResults));
-        return bestReviews.elements();
+
+    /* -------------------------------- Language Model Search ------------------------------------ */
+
+
+    private double calcMcProb(String token) {
+        return ((double) ir.getTokenCollectionFrequency(token)) / ((double) ir.getTokenSizeOfReviews());
+    }
+
+    private double calcMdProb(String token, int reviewId) {
+        Enumeration<Integer> reviewsWithFrequency = ir.getReviewsWithToken(token);
+        int curReview;
+        double curFrequency;
+        while (reviewsWithFrequency.hasMoreElements()) {
+            curReview = reviewsWithFrequency.nextElement();
+            curFrequency = reviewsWithFrequency.nextElement();
+            if (curReview == reviewId) {
+                return curFrequency / (double) ir.getReviewLength(reviewId);
+            }
+        }
+        return 0;
+    }
+
+    private double mixtureModelPerReview(List<String> query, double lambda, int reviewId) {
+        // TODO: do we need a set of query instead?
+        double score = 1;
+        double probabilty;
+        for (String term: query) {
+            probabilty = (lambda * calcMdProb(term, reviewId)) + ((1 - lambda) * calcMcProb(term));
+            score *= probabilty;
+        }
+        return score;
+    }
+
+    private Set<Integer> getRelevantReviews(Set<String> querySet) {
+        Set<Integer> relevantReviews = new HashSet<>();
+        int curReview;
+        for (String term: querySet) {
+            Enumeration<Integer> termPostingList = ir.getReviewsWithToken(term);
+            while (termPostingList.hasMoreElements()) {
+                curReview = termPostingList.nextElement();
+                termPostingList.nextElement();
+                relevantReviews.add(curReview);
+            }
+        }
+        return relevantReviews;
     }
 
     /**
@@ -145,8 +186,38 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k) {
-        return null;
+        List<String> queryList = Collections.list(query);
+        Set<String> querySet = new HashSet<>(queryList);
+        Set<Integer> relevantReviews = getRelevantReviews(querySet);
+
+        ReviewWithScore[] reviewWithScores = new ReviewWithScore[relevantReviews.size()];
+        int i = 0;
+        double score;
+        for (int reviewId: relevantReviews) {
+            score = mixtureModelPerReview(queryList, lambda, reviewId);
+            ReviewWithScore rws = new ReviewWithScore(reviewId, score);
+            reviewWithScores[i] = rws;
+            ++i;
+        }
+        return getBestReviews(k, reviewWithScores);
+
     }
+
+    private Enumeration<Integer> getBestReviews(int k, ReviewWithScore[] reviewWithScores) {
+        Arrays.sort(reviewWithScores, (o1, o2) -> -o1.compareTo(o2));
+        int numOfBestResults = Math.min(k, reviewWithScores.length);
+        Integer[] bestResults = new Integer[numOfBestResults];
+        for (int i = 0; i < bestResults.length; ++i) {
+            bestResults[i] = reviewWithScores[i].getReviewNumber();
+        }
+
+        Vector<Integer> bestReviews = new Vector<>(Arrays.asList(bestResults));
+        return bestReviews.elements();
+    }
+
+
+    /* ------------------------------------ Product Search ---------------------------------------- */
+
 
     /**
      * Returns a list of the id-s of the k most highly ranked productIds for the
@@ -154,6 +225,18 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Collection<String> productSearch(Enumeration<String> query, int k) {
-        return null;
+        /**
+         * 1. Find the top 10-50 reviews that match the query (one or more of the top methods)
+         * 2. Assign each review with a weight corresponding it's position (sum(weights)=1)
+         * 3. Extract Product IDs of each review.
+         * 4. For each product get the posting list and find ALL the reviews that it appears in.
+         * 5. For each review of each product, get the helpfulness and score.
+         *    Make sure that helpfulness is in [0,1] and than get (helpfulness*score) as the "new" review score.
+         * 6. Get the average of: The average and median of all new scores.
+         * 7. Consider reviews that match the query as higher weight
+         * 8. Combine new score weight with the query weight.
+         * 9. Normalize.
+         * 10. return top k.
+         */
     }
 }

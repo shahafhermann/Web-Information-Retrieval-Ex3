@@ -33,10 +33,16 @@ public class main {
         Vector<String> reviewsWithToken = new Vector<>(Arrays.asList(queryTerms));
         ReviewSearch rs = new ReviewSearch(ir);
         Enumeration<Integer> res;
+
         res = rs.vectorSpaceSearch(reviewsWithToken.elements(), 5);
         while (res.hasMoreElements()) {
             System.out.println(res.nextElement());
         }
+
+//        res = rs.languageModelSearch(reviewsWithToken.elements(), 0.25, 5);
+//        while (res.hasMoreElements()) {
+//            System.out.println(res.nextElement());
+//        }
     }
 
     private static void test1(IndexReader ir) {
