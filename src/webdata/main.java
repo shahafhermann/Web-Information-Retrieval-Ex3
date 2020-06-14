@@ -7,7 +7,7 @@ public class main {
     public static void main(String[] args) {
         String dir = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/indexFiles";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Movies_&_TV.txt";
-        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/5.txt";
+        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/ex3/1000.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Musical_Instruments.txt";
 //        String file = "/Users/shahaf/Documents/UNI/אחזור מידע באינטרנט/datasets/Electronics.txt";
 
@@ -29,20 +29,27 @@ public class main {
     }
 
     private static void test2(IndexReader ir) {
-        String[] queryTerms = {"best", "ever", "best", "query", "ever", "ever", "shahaf", "shahaf", "zohar", "zohar"};
-        Vector<String> reviewsWithToken = new Vector<>(Arrays.asList(queryTerms));
+//        String[] queryTerms = {"best", "ever", "best", "query", "ever", "ever", "shahaf", "shahaf", "zohar", "zohar"};
+        String[] queryTerms = {"Good", "dog", "FoOd", "for", "sensitive", "dogs"};
+        Vector<String> query = new Vector<>(Arrays.asList(queryTerms));
         ReviewSearch rs = new ReviewSearch(ir);
         Enumeration<Integer> res;
 
-        res = rs.vectorSpaceSearch(reviewsWithToken.elements(), 5);
-        while (res.hasMoreElements()) {
-            System.out.println(res.nextElement());
-        }
-
-//        res = rs.languageModelSearch(reviewsWithToken.elements(), 0.25, 5);
+//        res = rs.vectorSpaceSearch(query.elements(), 5);
 //        while (res.hasMoreElements()) {
 //            System.out.println(res.nextElement());
 //        }
+//
+//        res = rs.languageModelSearch(query.elements(), 0.25, 5);
+//        while (res.hasMoreElements()) {
+//            System.out.println(res.nextElement());
+//        }
+
+        Collection<String> goodProducts = rs.productSearch(query.elements(), 10);
+        for (String product: goodProducts) {
+            System.out.println(product);
+        }
+
     }
 
     private static void test1(IndexReader ir) {

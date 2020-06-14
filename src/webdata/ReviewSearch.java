@@ -1,6 +1,7 @@
 package webdata;
 
 import com.sun.source.tree.Tree;
+import webdata.utils.ProductWithScore;
 import webdata.utils.ReviewWithScore;
 import webdata.utils.Utils;
 
@@ -36,8 +37,8 @@ public class ReviewSearch {
         List<String> queryList = Collections.list(query);
         TreeMap<String, Integer> hist = new TreeMap<>();
         for (String term: queryList) {
-            Integer freq = (hist.keySet().contains(term)) ? hist.get(term) + 1 : 1;
-            hist.put(term, freq);
+            Integer freq = (hist.keySet().contains(term.toLowerCase())) ? hist.get(term.toLowerCase()) + 1 : 1;
+            hist.put(term.toLowerCase(), freq);
         }
         return hist;
     }
@@ -186,7 +187,11 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k) {
-        List<String> queryList = Collections.list(query);
+//        List<String> queryList = Collections.list(query);
+        ArrayList<String> queryList = new ArrayList<>();
+        while (query.hasMoreElements()) {
+            queryList.add(query.nextElement().toLowerCase());
+        }
         Set<String> querySet = new HashSet<>(queryList);
         Set<Integer> relevantReviews = getRelevantReviews(querySet);
 
@@ -238,5 +243,90 @@ public class ReviewSearch {
          * 9. Normalize.
          * 10. return top k.
          */
+        // Find all relevant reviews according to the query
+        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, 3 * k);
+
+        List<Integer> allReviewsList = Collections.list(allRelevantReviews); // Convert to list
+
+        // Assign each review with a weight corresponding it's position (sum(weights)=1)
+        int numOfRelevantReviews = allReviewsList.size();
+        double[] weights = new double[numOfRelevantReviews];
+        int denominator = (numOfRelevantReviews * (numOfRelevantReviews + 1)) / 2;
+        for (int i = 0; i < numOfRelevantReviews; ++i) {
+            weights[i] = ((double) (numOfRelevantReviews - i)) / denominator;
+        }
+
+        // Extract Product IDs of each review.
+        HashMap<String, Double> productWeightMap = new HashMap<>();
+        for (int i = 0; i < numOfRelevantReviews; ++i) {
+            String productId = ir.getProductId(allReviewsList.get(i));
+            if (productWeightMap.containsKey(productId)) {
+                double weight = productWeightMap.get(productId);
+                productWeightMap.put(productId, weight + weights[i]);
+            } else {
+                productWeightMap.put(productId, weights[i]);
+            }
+        }
+
+        // Iterate over all reviews of all products
+        HashMap<String, Double> productNewScores = new HashMap<>();
+        double sumOfScores = 0;
+        for (String productId: productWeightMap.keySet()) {
+            Enumeration<Integer> productReviews = ir.getProductReviews(productId);
+
+            ArrayList<Double> newReviewScores = new ArrayList<>();
+            while (productReviews.hasMoreElements()) {
+                int reviewId = productReviews.nextElement();
+                int score = ir.getReviewScore(reviewId);
+                int helpfulnessNumerator = ir.getReviewHelpfulnessNumerator(reviewId);
+                int helpfulnessDenominator = ir.getReviewHelpfulnessDenominator(reviewId);
+                if (helpfulnessNumerator > helpfulnessDenominator) {
+                    continue;
+                }
+
+                double helpfulness = (helpfulnessDenominator == 0) ?
+                        0 : ((double) helpfulnessNumerator) / helpfulnessDenominator;
+                newReviewScores.add(score * helpfulness);
+            }
+
+            // Get median and average and calculate a score for this product
+            Collections.sort(newReviewScores);
+            int numOfReviews = newReviewScores.size();
+            double median = 0;
+            if (numOfReviews % 2 == 0) {
+                median = (newReviewScores.get(numOfReviews / 2) + newReviewScores.get((numOfReviews / 2) - 1)) / 2;
+            } else {
+                median = newReviewScores.get(numOfReviews / 2);
+            }
+            double avg = 0;
+            for (double newScore: newReviewScores) {
+                avg += newScore;
+            }
+            avg /= numOfReviews;
+
+            double newScore = (avg + median) / 2;
+            productNewScores.put(productId, newScore);
+            sumOfScores += newScore;
+        }
+
+        // Calculate final weight and normalize
+        ProductWithScore[] productWithScores = new ProductWithScore[productWeightMap.size()];
+        int i = 0;
+        for (String productId: productWeightMap.keySet()) {
+            double normalizedScore = productNewScores.get(productId) / sumOfScores;
+            double curWeight = productWeightMap.get(productId);
+            productWithScores[i] = new ProductWithScore(productId, (curWeight + normalizedScore) / 2);
+            ++i;
+        }
+
+        // Sort by values and return top k
+        Arrays.sort(productWithScores, (o1, o2) -> -o1.compareTo(o2));
+        int numOfBestResults = Math.min(k, productWithScores.length);
+        ArrayList<String> bestResults = new ArrayList<>();
+        for (i = 0; i < numOfBestResults; ++i) {
+            bestResults.add(productWithScores[i].getProductId());
+        }
+
+        return bestResults;
     }
 }
