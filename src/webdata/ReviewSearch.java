@@ -9,6 +9,7 @@ import java.util.*;
 
 public class ReviewSearch {
 
+    private static final int C = 3;
     private IndexReader ir;
 
     /**
@@ -228,23 +229,27 @@ public class ReviewSearch {
      * Returns a list of the id-s of the k most highly ranked productIds for the
      * given query using a function of your choice
      * The list should be sorted by the ranking
+     *
+     * Algorithm:
+     * 1.	Find the top c*k reviews that match the query using VectorSpaceSearch
+     *      (‘k’ is the given argument and ‘c’ is an integer greater than 1, in our code c=3).
+     * 2.	Assign each review with a weight corresponding it's ranking, where sum(weights)=1,
+     *      and the higher the ranking – the bigger the weight.
+     * 3.	Extract Product IDs of each of the above reviews.
+     *      If productId is mentioned in more than one review, sum their weights.
+     * 4.	For each productId get the posting list and find ALL the reviews that it appears in.
+     * 5.	For each review of each productId, get the helpfulness and score.
+     *      If helpfulness is not in range [0,1] then discard it.
+     *      Then save (helpfulness*score) as the ‘new_review_score’.
+     * 6.	Calculate the average of: average(‘all_new_review_scores_of_pid’)
+     *      and median(‘all_new_review_scores_of_pid’) for each product.
+     * 7.	Normalize the above result for each product by the sum of all results.
+     * 8.	Combine the weights calculated in steps 3 and 7 and normalize.
+     * 9.	Return top k.
      */
     public Collection<String> productSearch(Enumeration<String> query, int k) {
-        /**
-         * 1. Find the top 10-50 reviews that match the query (one or more of the top methods)
-         * 2. Assign each review with a weight corresponding it's position (sum(weights)=1)
-         * 3. Extract Product IDs of each review.
-         * 4. For each product get the posting list and find ALL the reviews that it appears in.
-         * 5. For each review of each product, get the helpfulness and score.
-         *    Make sure that helpfulness is in [0,1] and than get (helpfulness*score) as the "new" review score.
-         * 6. Get the average of: The average and median of all new scores.
-         * 7. Consider reviews that match the query as higher weight
-         * 8. Combine new score weight with the query weight.
-         * 9. Normalize.
-         * 10. return top k.
-         */
         // Find all relevant reviews according to the query
-        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, 3 * k);
+        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, C * k);
 
         List<Integer> allReviewsList = Collections.list(allRelevantReviews); // Convert to list
 
