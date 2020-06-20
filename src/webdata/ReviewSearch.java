@@ -288,14 +288,14 @@ public class ReviewSearch {
                 }
 
                 double helpfulness = (helpfulnessDenominator == 0) ?
-                        0 : ((double) helpfulnessNumerator) / helpfulnessDenominator;
+                        1 : ((double) helpfulnessNumerator) / helpfulnessDenominator;
                 newReviewScores.add(score * helpfulness);
             }
 
             // Get median and average and calculate a score for this product
             Collections.sort(newReviewScores);
             int numOfReviews = newReviewScores.size();
-            double median = 0;
+            double median;
             if (numOfReviews % 2 == 0) {
                 median = (newReviewScores.get(numOfReviews / 2) + newReviewScores.get((numOfReviews / 2) - 1)) / 2;
             } else {
