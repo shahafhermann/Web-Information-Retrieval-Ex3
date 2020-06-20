@@ -9,7 +9,7 @@ import java.util.*;
 
 public class ReviewSearch {
 
-    private static final int C = 3;
+    private static final int C = 30;
     private IndexReader ir;
 
     /**
@@ -231,8 +231,7 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      *
      * Algorithm:
-     * 1.	Find the top c*k reviews that match the query using VectorSpaceSearch
-     *      (‘k’ is the given argument and ‘c’ is an integer greater than 1, in our code c=3).
+     * 1.	Find the top C reviews that match the query using VectorSpaceSearch (‘c’ is an integer greater than 1).
      * 2.	Assign each review with a weight corresponding it's ranking, where sum(weights)=1,
      *      and the higher the ranking – the bigger the weight.
      * 3.	Extract Product IDs of each of the above reviews.
@@ -249,7 +248,7 @@ public class ReviewSearch {
      */
     public Collection<String> productSearch(Enumeration<String> query, int k) {
         // Find all relevant reviews according to the query
-        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, C * k);
+        Enumeration<Integer> allRelevantReviews = vectorSpaceSearch(query, C);
 
         List<Integer> allReviewsList = Collections.list(allRelevantReviews); // Convert to list
 
