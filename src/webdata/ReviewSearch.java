@@ -157,7 +157,6 @@ public class ReviewSearch {
     }
 
     private double mixtureModelPerReview(List<String> query, double lambda, int reviewId) {
-        // TODO: do we need a set of query instead?
         double score = 1;
         double probabilty;
         for (String term: query) {
