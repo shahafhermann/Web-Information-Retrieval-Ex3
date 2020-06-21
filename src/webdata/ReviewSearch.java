@@ -187,7 +187,6 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Enumeration<Integer> languageModelSearch(Enumeration<String> query, double lambda, int k) {
-//        List<String> queryList = Collections.list(query);
         ArrayList<String> queryList = new ArrayList<>();
         while (query.hasMoreElements()) {
             queryList.add(query.nextElement().toLowerCase());
@@ -209,7 +208,7 @@ public class ReviewSearch {
     }
 
     private Enumeration<Integer> getBestReviews(int k, ReviewWithScore[] reviewWithScores) {
-        Arrays.sort(reviewWithScores, (o1, o2) -> -o1.compareTo(o2));
+        Arrays.sort(reviewWithScores);
         int numOfBestResults = Math.min(k, reviewWithScores.length);
         Integer[] bestResults = new Integer[numOfBestResults];
         for (int i = 0; i < bestResults.length; ++i) {
@@ -323,7 +322,7 @@ public class ReviewSearch {
         }
 
         // Sort by values and return top k
-        Arrays.sort(productWithScores, (o1, o2) -> -o1.compareTo(o2));
+        Arrays.sort(productWithScores);
         int numOfBestResults = Math.min(k, productWithScores.length);
         ArrayList<String> bestResults = new ArrayList<>();
         for (i = 0; i < numOfBestResults; ++i) {

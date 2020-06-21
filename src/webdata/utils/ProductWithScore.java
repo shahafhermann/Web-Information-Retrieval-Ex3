@@ -28,9 +28,9 @@ public class ProductWithScore implements Comparable<ProductWithScore> {
      */
     @Override
     public int compareTo(ProductWithScore o) {
-        double res = this.score - o.score;
+        double res = o.score - this.score;
         if (res > 0) return 1;
-        else if (res == 0) return 0;
+        else if (res == 0) return this.productId.compareTo(o.productId);
         else return -1;
     }
 }

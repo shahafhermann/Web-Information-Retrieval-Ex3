@@ -29,9 +29,9 @@ public class ReviewWithScore implements Comparable<ReviewWithScore> {
      */
     @Override
     public int compareTo(ReviewWithScore o) {
-        double res = this.score - o.score;
+        double res = o.score - this.score;
         if (res > 0) return 1;
-        else if (res == 0) return 0;
+        else if (res == 0) return this.reviewNumber - o.reviewNumber;
         else return -1;
     }
 }
